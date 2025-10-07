@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - InvestIndia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">InvestIndia</div>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/portfolio" class="active">Portfolio</a></li>
+                <li><a href="/market">Market</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="portfolio-container">
+        <h1>My Portfolio</h1>
+        
+        <div class="portfolio-summary">
+            <div class="summary-card">
+                <h3>Total Investment</h3>
+                <p class="summary-value">₹{{ "%.2f"|format(total_investment) }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Current Value</h3>
+                <p class="summary-value">₹{{ "%.2f"|format(current_value) }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Total P&L</h3>
+                <p class="summary-value {% if total_pl >= 0 %}positive{% else %}negative{% endif %}">
+                    ₹{{ "%.2f"|format(total_pl) }} ({{ "%.2f"|format(total_pl_percent) }}%)
+                </p>
+            </div>
+        </div>
+
+        <h2>Holdings</h2>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Stock Symbol</th>
+                    <th>Quantity</th>
+                    <th>Avg. Buy Price</th>
+                    <th>Current Price</th>
+                    <th>Investment</th>
+                    <th>Current Value</th>
+                    <th>P&L</th>
+                    <th>P&L %</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for holding in holdings %}
+                <tr>
+                    <td><strong>{{ holding.symbol }}</strong></td>
+                    <td>{{ holding.quantity }}</td>
+                    <td>₹{{ "%.2f"|format(holding.avg_price) }}</td>
+                    <td>₹{{ "%.2f"|format(holding.current_price) }}</td>
+                    <td>₹{{ "%.2f"|format(holding.investment) }}</td>
+                    <td>₹{{ "%.2f"|format(holding.current_value) }}</td>
+                    <td class="{% if holding.pl >= 0 %}positive{% else %}negative{% endif %}">
+                        ₹{{ "%.2f"|format(holding.pl) }}
+                    </td>
+                    <td class="{% if holding.pl_percent >= 0 %}positive{% else %}negative{% endif %}">
+                        {{ "%.2f"|format(holding.pl_percent) }}%
+                    </td>
+                    <td>
+                        <button class="btn-sell-small" onclick="openSellModal('{{ holding.symbol }}', {{ holding.current_price }}, {{ holding.quantity }})">
+                            Sell
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center;">No holdings yet. Start investing!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Sell Modal -->
+    <div id="sellModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSellModal()">&times;</span>
+            <h2>Sell Stock</h2>
+            <form method="POST" action="/trade">
+                <input type="hidden" name="symbol" id="sellSymbol">
+                <input type="hidden" name="type" value="SELL">
+                <div class="form-group">
+                    <label>Stock Symbol</label>
+                    <input type="text" id="sellDisplaySymbol" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Current Price</label>
+                    <input type="text" id="sellDisplayPrice" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Available Quantity</label>
+                    <input type="text" id="availableQty" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="sellQuantity">Quantity to Sell</label>
+                    <input type="number" id="sellQuantity" name="quantity" min="1" required onchange="calculateSellTotal()">
+                </div>
+                <div class="form-group">
+                    <label>Total Amount</label>
+                    <input type="text" id="sellTotalAmount" readonly>
+                </div>
+                <button type="submit" class="btn-primary">Confirm Sell</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 InvestIndia. All rights reserved.</p>
+    </footer>
+
+    <script>
+        let sellPrice = 0;
+        let maxQty = 0;
+
+        function openSellModal(symbol, price, quantity) {
+            document.getElementById('sellModal').style.display = 'block';
+            document.getElementById('sellSymbol').value = symbol;
+            document.getElementById('sellDisplaySymbol').value = symbol;
+            document.getElementById('sellDisplayPrice').value = '₹' + price.toFixed(2);
+            document.getElementById('availableQty').value = quantity;
+            document.getElementById('sellQuantity').setAttribute('max', quantity);
+            document.getElementById('sellQuantity').value = quantity;
+            sellPrice = price;
+            maxQty = quantity;
+            calculateSellTotal();
+        }
+
+        function closeSellModal() {
+            document.getElementById('sellModal').style.display = 'none';
+        }
+
+        function calculateSellTotal() {
+            const qty = document.getElementById('sellQuantity').value;
+            if (qty > maxQty) {
+                document.getElementById('sellQuantity').value = maxQty;
+            }
+            const total = qty * sellPrice;
+            document.getElementById('sellTotalAmount').value = '₹' + total.toFixed(2);
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('sellModal');
+            if (event.target == modal) {
+                closeSellModal();
+            }
+        }
+    </script>
+</body>
+</html>

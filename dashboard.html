@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - InvestIndia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">InvestIndia</div>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard" class="active">Dashboard</a></li>
+                <li><a href="/portfolio">Portfolio</a></li>
+                <li><a href="/market">Market</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <h1>Welcome, {{ user.name }}!</h1>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Portfolio Value</h3>
+                <p class="stat-value">₹{{ "%.2f"|format(portfolio_value) }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Available Balance</h3>
+                <p class="stat-value">₹{{ "%.2f"|format(user.balance) }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Invested</h3>
+                <p class="stat-value">₹{{ "%.2f"|format(total_invested) }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Today's P&L</h3>
+                <p class="stat-value {% if daily_pl >= 0 %}positive{% else %}negative{% endif %}">
+                    ₹{{ "%.2f"|format(daily_pl) }}
+                </p>
+            </div>
+        </div>
+
+        <div class="recent-activity">
+            <h2>Recent Transactions</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Stock</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in recent_transactions %}
+                    <tr>
+                        <td>{{ transaction.date }}</td>
+                        <td>{{ transaction.symbol }}</td>
+                        <td><span class="badge {% if transaction.type == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">
+                            {{ transaction.type }}
+                        </span></td>
+                        <td>{{ transaction.quantity }}</td>
+                        <td>₹{{ "%.2f"|format(transaction.price) }}</td>
+                        <td>₹{{ "%.2f"|format(transaction.total) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center;">No transactions yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 InvestIndia. All rights reserved.</p>
+    </footer>
+</body>
+</html>

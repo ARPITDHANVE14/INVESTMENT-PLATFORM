@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market - InvestIndia</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">InvestIndia</div>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/portfolio">Portfolio</a></li>
+                <li><a href="/market" class="active">Market</a></li>
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="market-container">
+        <h1>Stock Market</h1>
+        
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search stocks..." onkeyup="searchStocks()">
+        </div>
+
+        <div class="stocks-grid">
+            {% for stock in stocks %}
+            <div class="stock-card" data-symbol="{{ stock.symbol }}" data-name="{{ stock.name }}">
+                <div class="stock-header">
+                    <h3>{{ stock.symbol }}</h3>
+                    <p class="stock-name">{{ stock.name }}</p>
+                </div>
+                <div class="stock-price">
+                    <h2>₹{{ "%.2f"|format(stock.price) }}</h2>
+                    <span class="{% if stock.change >= 0 %}positive{% else %}negative{% endif %}">
+                        {{ "%.2f"|format(stock.change) }}%
+                    </span>
+                </div>
+                <div class="stock-actions">
+                    <button class="btn-buy" onclick="openTradeModal('{{ stock.symbol }}', {{ stock.price }}, 'BUY')">Buy</button>
+                    <button class="btn-sell" onclick="openTradeModal('{{ stock.symbol }}', {{ stock.price }}, 'SELL')">Sell</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Trade Modal -->
+    <div id="tradeModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTradeModal()">&times;</span>
+            <h2 id="modalTitle">Buy Stock</h2>
+            <form method="POST" action="/trade">
+                <input type="hidden" name="symbol" id="tradeSymbol">
+                <input type="hidden" name="type" id="tradeType">
+                <div class="form-group">
+                    <label>Stock Symbol</label>
+                    <input type="text" id="displaySymbol" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Price per Share</label>
+                    <input type="text" id="displayPrice" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">Quantity</label>
+                    <input type="number" id="quantity" name="quantity" min="1" required onchange="calculateTotal()">
+                </div>
+                <div class="form-group">
+                    <label>Total Amount</label>
+                    <input type="text" id="totalAmount" readonly>
+                </div>
+                <button type="submit" class="btn-primary">Confirm Trade</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 InvestIndia. All rights reserved.</p>
+    </footer>
+
+    <script>
+        let currentPrice = 0;
+
+        function openTradeModal(symbol, price, type) {
+            document.getElementById('tradeModal').style.display = 'block';
+            document.getElementById('tradeSymbol').value = symbol;
+            document.getElementById('tradeType').value = type;
+            document.getElementById('displaySymbol').value = symbol;
+            document.getElementById('displayPrice').value = '₹' + price.toFixed(2);
+            document.getElementById('modalTitle').textContent = type + ' ' + symbol;
+            currentPrice = price;
+            document.getElementById('quantity').value = 1;
+            calculateTotal();
+        }
+
+        function closeTradeModal() {
+            document.getElementById('tradeModal').style.display = 'none';
+        }
+
+        function calculateTotal() {
+            const qty = document.getElementById('quantity').value;
+            const total = qty * currentPrice;
+            document.getElementById('totalAmount').value = '₹' + total.toFixed(2);
+        }
+
+        function searchStocks() {
+            const input = document.getElementById('searchInput').value.toUpperCase();
+            const cards = document.getElementsByClassName('stock-card');
+            
+            for (let i = 0; i < cards.length; i++) {
+                const symbol = cards[i].getAttribute('data-symbol');
+                const name = cards[i].getAttribute('data-name');
+                if (symbol.toUpperCase().includes(input) || name.toUpperCase().includes(input)) {
+                    cards[i].style.display = '';
+                } else {
+                    cards[i].style.display = 'none';
+                }
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('tradeModal');
+            if (event.target == modal) {
+                closeTradeModal();
+            }
+        }
+    </script>
+</body>
+</html>
